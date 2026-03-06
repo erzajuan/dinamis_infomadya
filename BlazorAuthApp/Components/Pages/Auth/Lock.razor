@@ -1,0 +1,102 @@
+@page "/lock"
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+
+<div class="lock-container">
+
+    <div class="lock-card shadow">
+
+        <div class="lock-icon">
+            🔒
+        </div>
+
+        <h2>Account Locked</h2>
+
+        <p class="lock-text">
+            Your account has been temporarily locked due to
+            <b>too many failed login attempts</b>.
+        </p>
+
+        <p class="countdown">
+            Try again in <b>@seconds</b> seconds
+        </p>
+
+        <button class="btn btn-primary w-100 mt-3"                disabled="@isLocked"                @onclick="GoToLogin">
+
+            Back to Login
+
+        </button>
+
+    </div>
+
+</div>
+
+<style>
+    .lock-container {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #e74a3b, #c0392b);
+    }
+
+    .lock-card {
+        width: 420px;
+        background: white;
+        padding: 40px;
+        border-radius: 14px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .lock-icon {
+        font-size: 60px;
+        margin-bottom: 10px;
+    }
+
+    .lock-text {
+        color: #555;
+    }
+
+    .countdown {
+        margin-top: 15px;
+        font-size: 16px;
+    }
+
+    button {
+        border-radius: 8px;
+    }
+</style>
+
+@code {
+
+    private int seconds = 60;
+    private bool isLocked = true;
+    private Timer? timer;
+
+    protected override void OnInitialized()
+    {
+        timer = new Timer(UpdateCountdown, null, 0, 1000);
+    }
+
+    private void UpdateCountdown(object? state)
+    {
+        if (seconds > 0)
+        {
+            seconds--;
+            InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            isLocked = false;
+            timer?.Dispose();
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void GoToLogin()
+    {
+        Nav.NavigateTo("/login");
+    }
+
+}

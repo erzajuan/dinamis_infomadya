@@ -1,0 +1,153 @@
+@page "/login"
+@rendermode InteractiveServer
+@using BlazorAuthApp.DTOs
+@inject NavigationManager Nav
+
+<div class="login-container">
+
+    <div class="login-card shadow">
+
+        <h2 class="text-center mb-4">Welcome Back 👋</h2>
+
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+
+                <InputText @bind-Value="loginModel.Username"                           class="form-control"                           placeholder="Enter username" />
+
+                <ValidationMessage For="@(() => loginModel.Username)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+
+                <input type="password"                       @bind="loginModel.PasswordHash"                       class="form-control"
+                       placeholder="Enter password" />
+
+                <ValidationMessage For="@(() => loginModel.PasswordHash)" />
+            </div>
+
+            <button type="submit"                    class="btn btn-primary w-100"                    disabled="@isLoading">
+
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm"></span>
+                    <span class="ms-2">Signing in...</span>
+                }
+                else
+                {
+                    <span>Login</span>
+                }
+
+            </button>
+
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mt-3 fade show">
+                <strong>Login Failed</strong>
+                <div>@errorMessage</div>
+            </div>
+        }
+
+        <div class="text-center mt-3">
+            Belum punya akun?
+            <a href="/register">Register</a>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    .login-container {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #4e73df, #224abe);
+    }
+
+    .login-card {
+        width: 380px;
+        background: white;
+        padding: 35px;
+        border-radius: 12px;
+    }
+
+    .login-card h2 {
+        font-weight: 600;
+    }
+
+    .form-control {
+        border-radius: 8px;
+    }
+
+    .btn-primary {
+        border-radius: 8px;
+    }
+
+    .alert {
+        animation: fadeIn 0.4s ease;
+    }
+
+    .validation-message {
+        color: #e74a3b;
+        font-size: 14px;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+@code {
+
+    private LoginRequestDto loginModel = new();
+    private string errorMessage = "";
+    private bool isLoading = false;
+
+    [Inject]
+    private AuthService AuthService { get; set; } = default!;
+
+    private async Task HandleLogin()
+    {
+        errorMessage = "";
+        isLoading = true;
+
+        var result = await AuthService.Login(loginModel.Username, loginModel.PasswordHash);
+
+        isLoading = false;
+
+        if (result.Data != null && !string.IsNullOrEmpty(result.Data.Token))
+        {
+            Nav.NavigateTo("/welcome");
+        }
+        else if (result.Error != null)
+        {
+            if (result.Error.Status == 429)
+            {
+                Nav.NavigateTo("/lock");
+            }
+
+            errorMessage = result.Error.Detail;
+        }
+        else
+        {
+            errorMessage = "Login gagal. Silakan coba lagi.";
+        }
+    }
+}

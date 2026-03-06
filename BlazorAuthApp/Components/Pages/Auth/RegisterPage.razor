@@ -1,0 +1,183 @@
+@page "/register"
+@rendermode InteractiveServer
+@using BlazorAuthApp.DTOs
+@inject AuthService AuthService
+@inject NavigationManager Nav
+
+<div class="register-container">
+
+    <div class="register-card shadow">
+
+        <h2 class="text-center mb-4">Create Account 🚀</h2>
+
+        <EditForm Model="registerModel" OnValidSubmit="Register">
+
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+
+                <InputText @bind-Value="registerModel.Username"                           class="form-control"                           placeholder="Enter username" />
+
+                <ValidationMessage For="@(() => registerModel.Username)" />
+            </div>
+
+            <div class="mb-3">
+
+                <label class="form-label">Password</label>
+
+                <div class="password-wrapper">
+
+                    <InputText type="@passwordInputType"                               @bind-Value="registerModel.PasswordHash"                               class="form-control"
+                               placeholder="Enter password" />
+
+                    <button type="button"                            class="toggle-password"                            @onclick="TogglePassword">
+
+                        @(showPassword ? "🙈" : "👁")
+
+                    </button>
+
+                </div>
+
+                <ValidationMessage For="@(() => registerModel.PasswordHash)" />
+
+            </div>
+
+            <button class="btn btn-success w-100"                    disabled="@isLoading">
+
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm"></span>
+                    <span class="ms-2">Registering...</span>
+                }
+                else
+                {
+                    <span>Register</span>
+                }
+
+            </button>
+
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert @alertClass mt-3 fade show">
+                <strong>@titleMessage</strong>
+                <div>@message</div>
+            </div>
+        }
+
+        <div class="text-center mt-3">
+            Sudah punya akun?
+            <a href="/login">Login</a>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    .register-container {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #1cc88a, #169a6a);
+    }
+
+    .register-card {
+        width: 380px;
+        background: white;
+        padding: 35px;
+        border-radius: 12px;
+    }
+
+    .password-wrapper {
+        position: relative;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 18px;
+    }
+
+    .validation-message {
+        color: red;
+        font-size: 13px;
+    }
+
+    .alert {
+        animation: fadeIn 0.4s ease;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+@code {
+
+    private LoginRequestDto registerModel = new();
+
+    private string message = "";
+    private string alertClass = "";
+    private string titleMessage = "";
+
+    private bool isLoading = false;
+
+    private bool showPassword = false;
+
+    private string passwordInputType => showPassword ? "text" : "password";
+
+    private void TogglePassword()
+    {
+        showPassword = !showPassword;
+    }
+
+    private async Task Register()
+    {
+        message = "";
+        isLoading = true;
+
+        var result = await AuthService.Register(registerModel);
+
+        isLoading = false;
+
+        if (result != null)
+        {
+            message = result.Message;
+
+            if (result.Message == "User registered successfully")
+            {
+                alertClass = "alert-success";
+                titleMessage = "Success 🎉";
+
+                StateHasChanged();
+
+                await Task.Delay(2000);
+
+                Nav.NavigateTo("/login");
+            }
+            else
+            {
+                alertClass = "alert-danger";
+                titleMessage = "Register Failed";
+            }
+        }
+    }
+}
